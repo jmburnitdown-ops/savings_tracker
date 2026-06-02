@@ -481,10 +481,19 @@ class _CreateGoalDialogState extends State<CreateGoalDialog> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 400, maxHeight: 400);
     if (image != null) {
       final rawBytes = await image.readAsBytes();
-      setState(() {
-        _previewBytes = rawBytes;
-        _base64String = base64Encode(rawBytes);
-      });
+      if (!mounted) return;
+
+      final Uint8List? croppedBytes = await showDialog<Uint8List?>(
+        context: context,
+        builder: (context) => ManualCropDialog(imageBytes: rawBytes),
+      );
+
+      if (croppedBytes != null) {
+        setState(() {
+          _previewBytes = croppedBytes;
+          _base64String = base64Encode(croppedBytes);
+        });
+      }
     }
   }
 
@@ -581,6 +590,67 @@ class WidgetDropDownCurrency extends StatelessWidget {
         items: currencies.map((symbol) => DropdownMenuItem<String>(value: symbol, child: Text(symbol))).toList(),
         onChanged: onChanged,
       ),
+    );
+  }
+}
+
+class ManualCropDialog extends StatefulWidget {
+  final Uint8List imageBytes;
+  const ManualCropDialog({super.key, required this.imageBytes});
+
+  @override
+  State<ManualCropDialog> createState() => _ManualCropDialogState();
+}
+
+class _ManualCropDialogState extends State<ManualCropDialog> {
+  double _scale = 1.0;
+  Offset _offset = Offset.zero;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Position & Scale (1:1)'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 240,
+              height: 240,
+              color: Colors.black,
+              child: GestureDetector(
+                onPanUpdate: (details) => setState(() => _offset += details.delta),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Transform.translate(
+                      offset: _offset,
+                      child: Transform.scale(scale: _scale, child: Image.memory(widget.imageBytes, fit: BoxFit.contain)),
+                    ),
+                    Container(decoration: BoxDecoration(border: Border.all(color: Colors.redAccent, width: 2.5))),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Slider(
+            value: _scale,
+            min: 1.0,
+            max: 4.0,
+            activeColor: Colors.red,
+            onChanged: (val) => setState(() => _scale = val),
+          )
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancel')),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.pop(context, widget.imageBytes),
+          child: const Text('Apply', style: TextStyle(color: Colors.white)),
+        )
+      ],
     );
   }
 }
