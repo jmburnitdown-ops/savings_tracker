@@ -9,13 +9,14 @@ import '../providers/savings_provider.dart';
 
 class ProfileInspector extends StatefulWidget {
   final bool isBottomSheet;
-  const ProfileInspector({super.key, required this.isBottomSheet});
+  final VoidCallback? onClose;
+  const ProfileInspector({super.key, required this.isBottomSheet, this.onClose});
 
   @override
   State<ProfileInspector> createState() => _ProfileInspectorState();
 }
 
-class _ProfileInspectorState extends State<ProfileInspector> {
+class _ProfileInspectorState extends State<ProfileInspector> with TickerProviderStateMixin {
   final _firstNameController = TextEditingController();
   final _middleNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -24,11 +25,34 @@ class _ProfileInspectorState extends State<ProfileInspector> {
   Uint8List? _photoBytes;
   bool _isSavingProfile = false;
   bool _isLoadingProfile = true;
+  late AnimationController _logoController;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoOpacity;
 
   @override
   void initState() {
     super.initState();
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _logoScale = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
+    );
+    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeIn),
+    );
+    _logoController.forward();
     _loadProfileData();
+  }
+
+  @override
+  void dispose() {
+    _logoController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -232,6 +256,7 @@ class _ProfileInspectorState extends State<ProfileInspector> {
                         'middleName': mName,
                         'lastName': lName,
                         'birthday': _profileBirthday != null ? Timestamp.fromDate(_profileBirthday!) : null,
+                        'profileImageBase64': _photoBase64,
                       });
                     }
 
@@ -270,6 +295,139 @@ class _ProfileInspectorState extends State<ProfileInspector> {
           ],
         );
 
+        Widget accountStatsSection = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Account Statistics', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Text('${provider.goals.length}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                      Text('Active Goals', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text('₱${provider.goals.fold<double>(0, (sum, goal) => sum + goal.currentSavings).toStringAsFixed(0)}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                      Text('Total Saved', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        Widget accountInfoSection = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Account Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 16, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text('Account Created:', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      const SizedBox(width: 8),
+                      Text(FirebaseAuth.instance.currentUser?.metadata.creationTime?.toString().split(' ').first ?? 'N/A',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.email, size: 16, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text('Email:', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      const SizedBox(width: 8),
+                      Text(FirebaseAuth.instance.currentUser?.email ?? 'N/A',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        Widget accountActionsSection = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Account Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.logout),
+                label: const Text('Logout'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => FirebaseAuth.instance.signOut(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Delete Account'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade700,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                      content: const Text('Are you sure? This action cannot be undone.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                          onPressed: () async {
+                            try {
+                              await FirebaseAuth.instance.currentUser?.delete();
+                              if (mounted) Navigator.pop(context);
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              }
+                            }
+                          },
+                          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+
         Widget mainProfileColumn = Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -278,11 +436,21 @@ class _ProfileInspectorState extends State<ProfileInspector> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Account Profile Setup', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                  IconButton(
-                    icon: const Icon(Icons.info_outline, color: Colors.redAccent),
-                    tooltip: 'About This App',
-                    onPressed: _showAboutAppDialog,
+                  Text('Account Profile Setup', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                        tooltip: 'About This App',
+                        onPressed: _showAboutAppDialog,
+                      ),
+                      if (widget.onClose != null)
+                        IconButton(
+                          icon: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
+                          tooltip: 'Close Profile',
+                          onPressed: widget.onClose,
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -297,11 +465,11 @@ class _ProfileInspectorState extends State<ProfileInspector> {
                         children: [
                           CircleAvatar(
                             radius: 60,
-                            backgroundColor: Colors.grey[800],
+                            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                             backgroundImage: _photoBytes != null ? MemoryImage(_photoBytes!) : null,
-                            child: _photoBytes == null ? const Icon(Icons.person, size: 55, color: Colors.grey) : null,
+                            child: _photoBytes == null ? Icon(Icons.person, size: 55, color: Theme.of(context).colorScheme.onSurfaceVariant) : null,
                           ),
-                          const Positioned(bottom: 4, right: 4, child: CircleAvatar(radius: 16, backgroundColor: Colors.red, child: Icon(Icons.edit, size: 14, color: Colors.white))),
+                          Positioned(bottom: 4, right: 4, child: CircleAvatar(radius: 16, backgroundColor: Theme.of(context).colorScheme.primary, child: Icon(Icons.edit, size: 14, color: Theme.of(context).colorScheme.onPrimary))),
                         ],
                       ),
                     ),
@@ -317,18 +485,24 @@ class _ProfileInspectorState extends State<ProfileInspector> {
                       children: [
                         CircleAvatar(
                           radius: 55,
-                          backgroundColor: Colors.grey[800],
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                           backgroundImage: _photoBytes != null ? MemoryImage(_photoBytes!) : null,
-                          child: _photoBytes == null ? const Icon(Icons.person, size: 50, color: Colors.grey) : null,
+                          child: _photoBytes == null ? Icon(Icons.person, size: 50, color: Theme.of(context).colorScheme.onSurfaceVariant) : null,
                         ),
-                        const Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 16, backgroundColor: Colors.red, child: Icon(Icons.camera_alt, size: 14, color: Colors.white))),
+                        Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 16, backgroundColor: Theme.of(context).colorScheme.primary, child: Icon(Icons.camera_alt, size: 14, color: Theme.of(context).colorScheme.onPrimary))),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
                 inputFormGrid,
-              ]
+              ],
+              const SizedBox(height: 32),
+              Divider(color: Theme.of(context).colorScheme.outline),
+              const SizedBox(height: 16),
+              accountStatsSection,
+              accountInfoSection,
+              accountActionsSection,
             ],
           ),
         );

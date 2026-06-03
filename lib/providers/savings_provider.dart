@@ -120,7 +120,7 @@ class SavingsProvider extends ChangeNotifier {
         final data = doc.data() ?? {};
         _userProfile = UserProfile(
           username: _userProfile.username,
-          profileImageBase64: _userProfile.profileImageBase64,
+          profileImageBase64: data['profileImageBase64'] as String?,
           firstName: data['firstName'] as String?,
           middleName: data['middleName'] as String?,
           lastName: data['lastName'] as String?,
