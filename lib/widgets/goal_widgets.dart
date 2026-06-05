@@ -111,8 +111,7 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
   final _editTargetController = TextEditingController();
   final _depositController = TextEditingController();
   final _withdrawController = TextEditingController();
-  final _depositDescriptionController = TextEditingController();
-  final _withdrawDescriptionController = TextEditingController();
+  final _descriptionController = TextEditingController();
   DateTime? _editTargetDate;
 
   @override
@@ -137,8 +136,7 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
 
   @override
   void dispose() {
-    _depositDescriptionController.dispose();
-    _withdrawDescriptionController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -353,6 +351,17 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                       const Divider(height: 32),
                       const Text('Post Financial Transactions', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
                       const SizedBox(height: 10),
+                      TextField(
+                        controller: _descriptionController,
+                        decoration: const InputDecoration(
+                          hintText: 'Description (Optional)',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 12),
                       Row(
                         children: [100, 500, 1000].map((amount) {
                           return Padding(
@@ -385,27 +394,16 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                             onPressed: () {
                               final val = double.tryParse(_depositController.text) ?? 0.0;
-                              final desc = _depositDescriptionController.text.trim().isEmpty ? null : _depositDescriptionController.text.trim();
+                              final desc = _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim();
                               if (val > 0) {
                                 provider.addSavingsToGoal(widget.goal.id, val, description: desc);
                                 _depositController.clear();
-                                _depositDescriptionController.clear();
+                                _descriptionController.clear();
                               }
                             },
                             child: const Text('Deposit'),
                           )
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _depositDescriptionController,
-                        decoration: const InputDecoration(
-                          hintText: 'Description (Optional)',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        ),
-                        maxLines: 1,
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -421,27 +419,16 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[800], foregroundColor: Colors.white),
                             onPressed: () {
                               final val = double.tryParse(_withdrawController.text) ?? 0.0;
-                              final desc = _withdrawDescriptionController.text.trim().isEmpty ? null : _withdrawDescriptionController.text.trim();
+                              final desc = _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim();
                               if (val > 0) {
                                 provider.withdrawFromGoal(widget.goal.id, val, description: desc);
                                 _withdrawController.clear();
-                                _withdrawDescriptionController.clear();
+                                _descriptionController.clear();
                               }
                             },
                             child: const Text('Withdraw'),
                           )
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _withdrawDescriptionController,
-                        decoration: const InputDecoration(
-                          hintText: 'Description (Optional)',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        ),
-                        maxLines: 1,
                       ),
                     ],
                   ),
