@@ -45,7 +45,8 @@ class LedgerTransaction extends HiveObject {
   @HiveField(0) final String type;
   @HiveField(1) final double amount;
   @HiveField(2) final DateTime timestamp;
-  LedgerTransaction({required this.type, required this.amount, required this.timestamp});
+  @HiveField(3) final String? description;
+  LedgerTransaction({required this.type, required this.amount, required this.timestamp, this.description});
 }
 
 @HiveType(typeId: 1)
@@ -164,21 +165,21 @@ class SavingsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addSavingsToGoal(String id, double amount) async {
+  Future<void> addSavingsToGoal(String id, double amount, {String? description}) async {
     final goal = _goalBox.get(id);
     if (goal != null) {
       final history = List<LedgerTransaction>.from(goal.ledgerHistory)
-        ..insert(0, LedgerTransaction(type: 'Deposit', amount: amount, timestamp: DateTime.now()));
+        ..insert(0, LedgerTransaction(type: 'Deposit', amount: amount, timestamp: DateTime.now(), description: description));
       await _goalBox.put(id, goal.copyWith(currentSavings: goal.currentSavings + amount, ledgerHistory: history));
       notifyListeners();
     }
   }
 
-  Future<void> withdrawFromGoal(String id, double amount) async {
+  Future<void> withdrawFromGoal(String id, double amount, {String? description}) async {
     final goal = _goalBox.get(id);
     if (goal != null) {
       final history = List<LedgerTransaction>.from(goal.ledgerHistory)
-        ..insert(0, LedgerTransaction(type: 'Withdrawal', amount: amount, timestamp: DateTime.now()));
+        ..insert(0, LedgerTransaction(type: 'Withdrawal', amount: amount, timestamp: DateTime.now(), description: description));
       await _goalBox.put(id, goal.copyWith(currentSavings: (goal.currentSavings - amount).clamp(0.0, double.infinity), ledgerHistory: history));
       notifyListeners();
     }

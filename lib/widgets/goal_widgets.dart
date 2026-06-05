@@ -111,6 +111,8 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
   final _editTargetController = TextEditingController();
   final _depositController = TextEditingController();
   final _withdrawController = TextEditingController();
+  final _depositDescriptionController = TextEditingController();
+  final _withdrawDescriptionController = TextEditingController();
   DateTime? _editTargetDate;
 
   @override
@@ -131,6 +133,13 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
       _depositController.clear();
       _withdrawController.clear();
     }
+  }
+
+  @override
+  void dispose() {
+    _depositDescriptionController.dispose();
+    _withdrawDescriptionController.dispose();
+    super.dispose();
   }
 
   List<FlSpot> _generateChartSpots() {
@@ -376,14 +385,27 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                             onPressed: () {
                               final val = double.tryParse(_depositController.text) ?? 0.0;
+                              final desc = _depositDescriptionController.text.trim().isEmpty ? null : _depositDescriptionController.text.trim();
                               if (val > 0) {
-                                provider.addSavingsToGoal(widget.goal.id, val);
+                                provider.addSavingsToGoal(widget.goal.id, val, description: desc);
                                 _depositController.clear();
+                                _depositDescriptionController.clear();
                               }
                             },
                             child: const Text('Deposit'),
                           )
                         ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _depositDescriptionController,
+                        decoration: const InputDecoration(
+                          hintText: 'Description (Optional)',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        maxLines: 1,
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -399,14 +421,27 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[800], foregroundColor: Colors.white),
                             onPressed: () {
                               final val = double.tryParse(_withdrawController.text) ?? 0.0;
+                              final desc = _withdrawDescriptionController.text.trim().isEmpty ? null : _withdrawDescriptionController.text.trim();
                               if (val > 0) {
-                                provider.withdrawFromGoal(widget.goal.id, val);
+                                provider.withdrawFromGoal(widget.goal.id, val, description: desc);
                                 _withdrawController.clear();
+                                _withdrawDescriptionController.clear();
                               }
                             },
                             child: const Text('Withdraw'),
                           )
                         ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _withdrawDescriptionController,
+                        decoration: const InputDecoration(
+                          hintText: 'Description (Optional)',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        maxLines: 1,
                       ),
                     ],
                   ),
@@ -430,7 +465,17 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                                     child: ListTile(
                                       dense: true,
                                       leading: Icon(isDeposit ? Icons.arrow_downward : Icons.arrow_upward, color: isDeposit ? Colors.greenAccent : Colors.redAccent, size: 14),
-                                      title: Text(tx.type, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                      title: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(tx.type, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                          if (tx.description != null && tx.description!.isNotEmpty)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 4.0),
+                                              child: Text(tx.description!, style: const TextStyle(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic)),
+                                            ),
+                                        ],
+                                      ),
                                       subtitle: Text('${tx.timestamp.month}/${tx.timestamp.day} at ${tx.timestamp.hour}:${tx.timestamp.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                                       trailing: Text(
                                         '${isDeposit ? "+" : "-"}${widget.goal.currency}${tx.amount.toStringAsFixed(0)}',
