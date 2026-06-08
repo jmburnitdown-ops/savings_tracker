@@ -201,7 +201,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         // Replace the title Row in your MainScreen AppBar with this:
 title: Row(
   children: [
-    Image.asset('assets/apexsaver_icon.png', height: 32, width: 32,
+    Image.asset('assets/apexsaver_logo.png', height: 32, width: 32,
         errorBuilder: (context, error, stackTrace) => Icon(Icons.change_history_rounded, color: theme.colorScheme.primary)),
     const SizedBox(width: 12),
     Text('ApexSaver Hub', style: TextStyle(color: theme.colorScheme.onSurface)),
@@ -293,7 +293,7 @@ title: Row(
                                             child: Transform.scale(
                                               scale: _logoScale.value,
                                               child: Image.asset(
-                                                'assets/apexsaver_icon.png',
+                                                'assets/apexsaver_logo.png',
                                                 height: 500,
                                                 width: 500,
                                                 errorBuilder: (context, error, stackTrace) => const Icon(Icons.change_history_rounded, size: 500, color: Colors.red),

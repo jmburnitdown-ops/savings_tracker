@@ -35,7 +35,6 @@ flutter:
 
   # Registered asset paths for the login portal and tracker dashboard backgrounds
   assets:
-    - assets/apexsaver_icon.png
     - assets/apexsaver_logo.png
     - assets/apexsaver_logo2.png
     - assets/apexsaver_bg.png

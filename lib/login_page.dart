@@ -253,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 child: child,
                               ),
                               child: Image.asset(
-                                'assets/apexsaver_icon.png',
+                                'assets/apexsaver_logo.png',
                                 width: 64,
                                 height: 64,
                                 fit: BoxFit.contain,
