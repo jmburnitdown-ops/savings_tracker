@@ -142,7 +142,7 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
 
   List<FlSpot> _generateChartSpots() {
     if (widget.goal.ledgerHistory.isEmpty) return [const FlSpot(0, 0)];
-    
+
     final reversedHistory = widget.goal.ledgerHistory.reversed.toList();
     List<FlSpot> spots = [const FlSpot(0, 0)];
     double rollingBalance = 0;
@@ -159,6 +159,33 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
     }
     return spots;
   }
+
+  void _showEditDescriptionDialog(BuildContext context, int txIndex, String currentDescription) {
+    final editController = TextEditingController(text: currentDescription);
+    final provider = Provider.of<SavingsProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Transaction Description'),
+        content: TextField(
+          controller: editController,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: 'Enter description (optional)', border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              provider.updateTransactionDescription(widget.goal.id, txIndex, editController.text);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -451,6 +478,7 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                                     margin: const EdgeInsets.symmetric(vertical: 4),
                                     child: ListTile(
                                       dense: true,
+                                      onTap: () => _showEditDescriptionDialog(context, idx, tx.description ?? ''),
                                       leading: Icon(isDeposit ? Icons.arrow_downward : Icons.arrow_upward, color: isDeposit ? Colors.greenAccent : Colors.redAccent, size: 14),
                                       title: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,6 +488,11 @@ class _SplitDetailsInspectorState extends State<SplitDetailsInspector> {
                                             Padding(
                                               padding: const EdgeInsets.only(top: 4.0),
                                               child: Text(tx.description!, style: const TextStyle(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic)),
+                                            )
+                                          else
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 4.0),
+                                              child: Text('(no description)', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
                                             ),
                                         ],
                                       ),

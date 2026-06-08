@@ -199,4 +199,15 @@ class SavingsProvider extends ChangeNotifier {
     if (_selectedGoalId == id) _selectedGoalId = null;
     notifyListeners();
   }
+
+  Future<void> updateTransactionDescription(String goalId, int transactionIndex, String newDescription) async {
+    final goal = _goalBox.get(goalId);
+    if (goal != null && transactionIndex >= 0 && transactionIndex < goal.ledgerHistory.length) {
+      final tx = goal.ledgerHistory[transactionIndex];
+      final updatedTx = LedgerTransaction(type: tx.type, amount: tx.amount, timestamp: tx.timestamp, description: newDescription.trim().isEmpty ? null : newDescription.trim());
+      final history = List<LedgerTransaction>.from(goal.ledgerHistory)..[transactionIndex] = updatedTx;
+      await _goalBox.put(goalId, goal.copyWith(ledgerHistory: history));
+      notifyListeners();
+    }
+  }
 }
